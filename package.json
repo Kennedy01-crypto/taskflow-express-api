@@ -11,9 +11,10 @@
   "license": "MIT",
   "author": "Jim Kennedy @jimotieno447@gmail.com",
   "type": "module",
-  "main": "app.js",
+  "main": "src/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/app.js"
   },
   "dependencies": {
     "express": "^5.1.0"
