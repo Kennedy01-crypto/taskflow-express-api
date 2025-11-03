@@ -1,0 +1,21 @@
+{
+  "name": "taskflow-express-api",
+  "version": "1.0.0",
+  "description": "A RESTful API for managing tasks, built with Express.js and MongoDB.",
+  "keywords": [
+    "express",
+    "mongodb",
+    "api",
+    "tasks"
+  ],
+  "license": "MIT",
+  "author": "Jim Kennedy @jimotieno447@gmail.com",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
