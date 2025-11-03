@@ -2,6 +2,7 @@ import express from "express";
 import morgan from "morgan";
 
 const app = express();
+let requestCount = 0;
 
 // define port number
 const PORT = process.env.PORT || 3000;
@@ -25,13 +26,29 @@ app.use((req, res, next) => {
   next();
 });
 
+const addCreatedAtTimestamp = (req, res, next) => {
+  req.body.createdAt = new Date().toISOString();
+  next();
+};
+
+// middleware for tracking number of requests
+const requestCounter = (req, res, next) => {
+  requestCount++;
+  console.log(`Total requests received so far: ${requestCount}`);
+  next();
+};
+
+app.use(requestCounter);
+
 // 5. Authentication Middleware (Mock)
 const authenticationChecker = (req, res, next) => {
-  const apiKey = req.headers['x-api-key'];
-  if (apiKey === 'my_secret_key_123') {
+  const apiKey = req.headers["x-api-key"];
+  if (apiKey === "my_secret_key_123") {
     next();
   } else {
-    res.status(401).json({ message: 'Unauthorized: Missing or invalid API Key.' });
+    res
+      .status(401)
+      .json({ message: "Unauthorized: Missing or invalid API Key." });
   }
 };
 
@@ -63,36 +80,38 @@ function generateId() {
 }
 
 // ----TaskFlow API routes---- //
-
+app.get("/metrics", (req, res) => {
+  res.json({ totalRequests: requestCount });
+});
 app
   .route("/api/tasks")
   .get((req, res) => {
     console.log(`GET /api/tasks called at ${req.requestRecievedTime}`);
     res.json(tasks);
   })
-  .post(authenticationChecker, (req, res) => {
-      console.log("Authentication successful.");
-      console.log("POST /api/tasks called");
-      const { title, description } = req.body;
-      // basic validation
-      if (!title || !description) {
-        return res
-          .status(400)
-          .json({ message: "Title and description are required" });
-      }
-      const newTask = {
-        id: generateId(),
-        title,
-        description,
-        completed: false,
-      };
-
-      tasks.push(newTask);
-      res
-        .status(201)
-        .json({ message: "Task created successfully", task: newTask });
+  .post(authenticationChecker, addCreatedAtTimestamp, (req, res) => {
+    console.log("Authentication successful.");
+    console.log("POST /api/tasks called");
+    const { title, description, createdAt } = req.body;
+    // basic validation
+    if (!title || !description) {
+      return res
+        .status(400)
+        .json({ message: "Title and description are required" });
     }
-  );
+    const newTask = {
+      id: generateId(),
+      title,
+      description,
+      completed: false,
+      createdAt, // Save the timestamp
+    };
+
+    tasks.push(newTask);
+    res
+      .status(201)
+      .json({ message: "Task created successfully", task: newTask });
+  });
 
 // 7. Get Endpoint for task Status
 app.get("/api/tasks/completed", (req, res) => {
