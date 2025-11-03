@@ -1,12 +1,39 @@
 import express from "express";
+import morgan from "morgan";
 
 const app = express();
 
 // define port number
 const PORT = process.env.PORT || 3000;
 
-// middleware to parse JSON bodies
+// ---- Global Middlewares ---- //
+// 1. Logging middleware
+app.use(morgan("dev"));
+
+// 2. JSON Bosy Parser
 app.use(express.json());
+
+// 3. URL-encoded Body Parser
+app.use(express.urlencoded({ extended: true }));
+
+// 4. Custom Middleware: BAsic request timestamp logger
+app.use((req, res, next) => {
+  req.requestRecievedTime = new Date().toISOString();
+  console.log(
+    `Request received at: ${req.requestRecievedTime} for method: ${req.method} & url: ${req.url}`
+  );
+  next();
+});
+
+// 5. Authentication Middleware (Mock)
+const authenticationChecker = (req, res, next) => {
+  const apiKey = req.headers['x-api-key'];
+  if (apiKey === 'my_secret_key_123') {
+    next();
+  } else {
+    res.status(401).json({ message: 'Unauthorized: Missing or invalid API Key.' });
+  }
+};
 
 // inmemory "database" for tasks
 let tasks = [
@@ -37,31 +64,35 @@ function generateId() {
 
 // ----TaskFlow API routes---- //
 
-app.route("/api/tasks")
+app
+  .route("/api/tasks")
   .get((req, res) => {
-    console.log("GET /api/tasks called");
+    console.log(`GET /api/tasks called at ${req.requestRecievedTime}`);
     res.json(tasks);
   })
-  .post((req, res) => {
-    console.log("POST /api/tasks called");
-    const { title, description } = req.body;
-    // basic validation
-    if (!title || !description) {
-      return res
-        .status(400)
-        .json({ message: "Title and description are required" });
+  .post(authenticationChecker, (req, res) => {
+      console.log("Authentication successful.");
+      console.log("POST /api/tasks called");
+      const { title, description } = req.body;
+      // basic validation
+      if (!title || !description) {
+        return res
+          .status(400)
+          .json({ message: "Title and description are required" });
+      }
+      const newTask = {
+        id: generateId(),
+        title,
+        description,
+        completed: false,
+      };
+
+      tasks.push(newTask);
+      res
+        .status(201)
+        .json({ message: "Task created successfully", task: newTask });
     }
-
-    const newTask = {
-      id: generateId(),
-      title,
-      description,
-      completed: false,
-    };
-
-    tasks.push(newTask);
-    res.status(201).json({ message: "Task created successfully", task: newTask });
-  });
+  );
 
 // 7. Get Endpoint for task Status
 app.get("/api/tasks/completed", (req, res) => {
@@ -77,19 +108,23 @@ app.get("/api/tasks/pending", (req, res) => {
   res.json(pendingTasks);
 });
 
-app.route("/api/tasks/:id")
-  .get((req, res, next) => {
-    console.log(`Request for task id ${req.params.id} received.`);
-    next();
-  }, (req, res) => {
-    const taskID = req.params.id;
-    const task = tasks.find((t) => t.id === taskID);
-    if (task) {
-      res.json(task);
-    } else {
-      res.status(404).json({ message: "Task not found" });
+app
+  .route("/api/tasks/:id")
+  .get(
+    (req, res, next) => {
+      console.log(`Request for task id ${req.params.id} received.`);
+      next();
+    },
+    (req, res) => {
+      const taskID = req.params.id;
+      const task = tasks.find((t) => t.id === taskID);
+      if (task) {
+        res.json(task);
+      } else {
+        res.status(404).json({ message: "Task not found" });
+      }
     }
-  })
+  )
   .put((req, res) => {
     const taskId = req.params.id;
     console.log(`PUT /api/tasks/${taskId} - Updating task`);
@@ -109,7 +144,10 @@ app.route("/api/tasks/:id")
         description,
         completed,
       };
-      res.json({ message: "Task updated successfully", task: tasks[taskIndex] });
+      res.json({
+        message: "Task updated successfully",
+        task: tasks[taskIndex],
+      });
     } else {
       res.status(404).json({ message: `Task with ID ${taskId} not found.` });
     }
@@ -156,7 +194,8 @@ let users = [
   { id: "3", name: "Charlie" },
 ];
 
-app.route("/api/users")
+app
+  .route("/api/users")
   .get((req, res) => {
     console.log("GET /api/users called");
     res.json(users);
@@ -178,7 +217,8 @@ app.route("/api/users")
     }
   });
 
-app.route("/api/users/:id")
+app
+  .route("/api/users/:id")
   .get((req, res) => {
     const userId = req.params.id;
     console.log(`GET /api/users/${userId} called`);
@@ -206,6 +246,12 @@ app.get("/api/:param", (req, res) => {
 });
 app.get("/api/special", (req, res) => {
   res.send("This is a special route.");
+});
+
+// basic error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.task);
+  res.status(500).send(`Something Broke! Error: ${err.message}`);
 });
 
 // start server
