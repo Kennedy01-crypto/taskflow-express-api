@@ -11,13 +11,15 @@
   "license": "MIT",
   "author": "Jim Kennedy @jimotieno447@gmail.com",
   "type": "module",
-  "main": "src/app.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/app.js"
+    "start": "nodemon src/index.js"
   },
   "dependencies": {
     "express": "^5.1.0",
-    "morgan": "^1.10.1"
+    "mongodb": "^7.0.0",
+    "morgan": "^1.10.1",
+    "nodemon": "^3.1.10"
   }
 }
