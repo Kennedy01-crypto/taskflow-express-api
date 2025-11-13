@@ -115,13 +115,61 @@ router.get("/gettask/:id", async (req, res) => {
     res.status(200).json({ task });
   } catch (error) {
     console.error("Error finding task:", error);
-    res
-      .status(500)
-      .json({
-        message: `Failed to find task with id ${taskId}`,
-        error: error.message,
-      });
+    res.status(500).json({
+      message: `Failed to find task with id ${taskId}`,
+      error: error.message,
+    });
   }
 });
 
+// Find - Read Operation - All tasks
+//db.collection('collectionName').find(query, options)
+
+router.get("/gettasks", async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const taskCollection = db.collection("tasks");
+
+    // create a query object
+    const query = {};
+
+    // populate the query object
+    if (req.query.completed !== undefined) {
+      query.completed = req.query.completed === "true";
+    }
+    if (req.query.title) {
+      // case insensitive search for title
+      query.title = { $regex: new RegExp(req.query.title, "1") };
+    }
+
+    // options for sorting and limiting results
+    const options = {};
+    if (req.query.sortBy) {
+      options.sort = {
+        [req.query.sortBy]: req.query.sortOrder == "desc" ? -1 : 1,
+      };
+    } else {
+      options.sort = { createdAt: -1 };
+    }
+    if (req.query.limit) {
+      options.limit = parseInt(req.query.limit);
+    }
+
+    //perform the find operation and convert the cursor to an array
+    const tasks = await taskCollection.find(query, options).toArray();
+
+    // display diff message if no results found
+    if (tasks.length === 0) {
+      //if no tasks are found, it is still a 200 ok with empty array'
+      res.status(200).json({ message: "No tasks found" });
+    } else {
+      res.status(200).json(tasks);
+    }
+  } catch (error) {
+    console.error("Error fetching tasks:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch tasks", error: error.message });
+  }
+});
 export default router;
