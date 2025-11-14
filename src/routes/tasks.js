@@ -191,4 +191,35 @@ router.get("/incomplete", async (req, res) => {
       .json({ message: "Failed to fetch incomplete tasks", error: errr });
   }
 });
+
+// Update - Modify/Add duedate
+// db.collection('collectionName').updateOne(query, update, options)
+
+router.put("/:id/due-date", async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const taskCollection = db.collection("tasks");
+    const taskId = req.params.id;
+    // parse the id
+    const targetId = new ObjectId(taskId);
+
+    // query
+    const query = { _id: targetId };
+
+    // update
+    const update = {$set: { dueDate: new Date(req.body.dueDate) }};
+
+    const result = await taskCollection.updateOne(query, update);
+    if(result.matchedCount === 0){
+      return res.status(404).json({ message: "Task not found" });
+    }
+    if(result.modifiedCount === 0) {
+      return res.status(200).json({ message: "No changes made" });
+    }
+    res.status(200).json({ message: `Updated ${result.modifiedCount} tasks` });
+  } catch (err) {
+    console.error(`Error occured ${err.message}`);
+    res.status(400).json({ message: `Error occured ${err.message}` });
+  }
+});
 export default router;
