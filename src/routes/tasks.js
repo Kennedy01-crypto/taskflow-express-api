@@ -207,13 +207,13 @@ router.put("/:id/due-date", async (req, res) => {
     const query = { _id: targetId };
 
     // update
-    const update = {$set: { dueDate: new Date(req.body.dueDate) }};
+    const update = { $set: { dueDate: new Date(req.body.dueDate) } };
 
     const result = await taskCollection.updateOne(query, update);
-    if(result.matchedCount === 0){
+    if (result.matchedCount === 0) {
       return res.status(404).json({ message: "Task not found" });
     }
-    if(result.modifiedCount === 0) {
+    if (result.modifiedCount === 0) {
       return res.status(200).json({ message: "No changes made" });
     }
     res.status(200).json({ message: `Updated ${result.modifiedCount} tasks` });
@@ -222,4 +222,89 @@ router.put("/:id/due-date", async (req, res) => {
     res.status(400).json({ message: `Error occured ${err.message}` });
   }
 });
+
+// delete completed tasks for a specific day
+// db.collection('collectionName').deleteMany(query, options)
+
+router.delete("/completed-on/:date", async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const taskCollection = db.collection("tasks");
+    const inputDate = new Date(req.params.date);
+    if(isNaN(inputDate.getTime())){
+      return res.status(400).json({ message: "Invalid date format" });
+    }
+    const startofDay = new Date(inputDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(inputDate.setHours(23, 59, 59, 999));
+
+    const query = {
+      completed: true,
+      completedAt: {$gte: startofDay, $lte: endOfDay},
+    };
+
+    const result = await taskCollection.deleteMany(query);
+    if (result.deletedCount === 0) {
+      res.status(404).json({ message: "No completed tasks found" });
+    } else {
+      res
+        .status(200)
+        .json({ message: `${result.deletedCount} Tasks Deleted Successcully` });
+    }
+  } catch (err) {
+    console.error(`Error occured ${err.message}`);
+    res.status(500).json({ message: `Error occured ${err.message}` });
+  }
+});
+
+// Update a task's completion status
+// PATCH /api/tasks/:id/complete
+router.patch("/:id/complete", async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const taskCollection = db.collection("tasks");
+    const taskId = req.params.id;
+    const { completed } = req.body;
+
+    // Validate the completed field
+    if (typeof completed !== "boolean") {
+      return res
+        .status(400)
+        .json({ message: "'completed' must be a boolean value" });
+    }
+
+    // Convert string ID to Mongo ObjectID
+    let taskObjectID;
+    try {
+      taskObjectID = new ObjectId(taskId);
+    } catch (error) {
+      return res.status(400).json({ message: "Invalid Task ID format" });
+    }
+
+    const update = {
+      $set: {
+        completed: completed,
+        completedAt: completed ? new Date() : null,
+      },
+    };
+
+    const result = await taskCollection.findOneAndUpdate(
+      { _id: taskObjectID },
+      update,
+      { returnDocument: "after" } // Return the updated document
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    res.status(200).json({
+      message: "Task completion status updated successfully",
+      task: result,
+    });
+  } catch (err) {
+    console.error(`Error updating task completion: ${err.message}`);
+    res.status(500).json({ message: `Error updating task: ${err.message}` });
+  }
+});
+
 export default router;
