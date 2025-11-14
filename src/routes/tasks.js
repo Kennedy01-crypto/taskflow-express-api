@@ -139,7 +139,7 @@ router.get("/gettasks", async (req, res) => {
     }
     if (req.query.title) {
       // case insensitive search for title
-      query.title = { $regex: new RegExp(req.query.title, "1") };
+      query.title = { $regex: new RegExp(req.query.title, "i") };
     }
 
     // options for sorting and limiting results
@@ -170,6 +170,25 @@ router.get("/gettasks", async (req, res) => {
     res
       .status(500)
       .json({ message: "Failed to fetch tasks", error: error.message });
+  }
+});
+
+// get incomplete tasks
+// Find - Read Operation: db.collection('collectionName').find(query, options)
+router.get("/incomplete", async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const taskCollection = db.collection("tasks");
+
+    const query = { completed: false };
+    const tasks = await taskCollection.find(query).toArray();
+
+    res.status(200).json(tasks);
+  } catch (errr) {
+    console.error(`Error fetching incomplete tasks: ${errr}`);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch incomplete tasks", error: errr });
   }
 });
 export default router;
