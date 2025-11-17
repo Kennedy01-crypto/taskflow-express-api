@@ -7,32 +7,36 @@ const taskSchema = new Schema(
       type: String,
       minlength: [3, "Title must be at least 3 characters long"],
       maxlength: [50, "Title cannot exceed 50 characters"],
-      required: true,
+      required: [true, "Title is required"],
       trim: true,
     },
     description: {
       type: String,
       minlength: [10, "Description must be at least 10 characters long"],
-      maxlength: [200, "Description cannot exceed 200 characters"],
+      maxlength: [500, "Description cannot exceed 500 characters"],
       trim: true,
       default: "No description provided",
     },
     priority: {
-      type: String,
-      enum: ["low", "medium", "high"],
-      default: "medium",
+      type: Number,
       required: true,
+      min: [1, "Priority must be at least 1"],
+      max: [5, "Priority cannot exceed 5"],
+      default: 3,
     },
     dueDate: {
       type: Date,
       required: true,
       validate: {
         validator: function (v) {
-          return !v || v >= Date.now();
+          return v > Date.now();
         },
-        message: (props) =>
-          `${props.value} is not a valid date! It cannot be in the past.`,
+        message: (props) => `Due date must be in the future!`,
       },
+    },
+    assignedTo: {
+      type: String,
+      default: "Unassigned",
     },
     status: {
       type: String,
@@ -48,6 +52,5 @@ const taskSchema = new Schema(
   },
   { timestamps: true }
 );
-
 
 export default mongoose.model("Task", taskSchema);
