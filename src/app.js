@@ -1,15 +1,15 @@
 import express from "express";
 import { MongoClient, ServerApiVersion } from "mongodb";
 import tasksRouter from "./routes/tasks.js";
+import connectionToDatabase from "./utils/db.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+//Connect to database
+connectionToDatabase();
+
 app.use(express.json());
-
-// MongoDB URI connection string
-const URI = process.env.MONGODB_URI || "mongodb://localhost:27017/taskflowdb";
-
 async function MongoConnect() {
   const client = new MongoClient(URI, {
     serverApi: {
@@ -35,15 +35,13 @@ async function MongoConnect() {
 }
 // import your routes here and use them
 
-app.use("/api/tasks", tasksRouter);
+// app.use("/api/tasks", tasksRouter);
 
+app.get("/", (req, res) => {
+  res.send("✅TaskFlow API is running!");
+});
 
-
-
-// call the connection function to listen to the port
-MongoConnect().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`Access the TaskFlow API at http://localhost:${PORT}`);
-  })
-})
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Access the TaskFlow API at http://localhost:${PORT}`);
+});
