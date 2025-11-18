@@ -18,6 +18,7 @@
     "test:models": "node src/test_models.js"
   },
   "dependencies": {
+    "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "mongodb": "^7.0.0",
     "mongoose": "^8.19.4",
