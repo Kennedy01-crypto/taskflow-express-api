@@ -1,6 +1,6 @@
 //import the "MongoClient" class from the "mongodb" package
-import { MongoClient } from "mongodb";
 import mongoose from "mongoose";
+
 // MongoDB connection URI
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/taskflowdb";
 
@@ -8,7 +8,7 @@ const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/taskflowdb";
 async function connectionToDatabase() {
   try {
     await mongoose.connect(uri); // Connect to the MongoDB via mongoose
-    console.log("Successfully connected via Mongoose to MongoDB");
+    console.log(`MongoDB connected`);
   } catch (error) {
     console.error("Failed to connect to MongoDB", error);
     throw error;

@@ -18,20 +18,45 @@ const taskSchema = new Schema(
       default: "No description provided",
     },
     priority: {
-      type: Number,
-      required: true,
-      min: [1, "Priority must be at least 1"],
-      max: [5, "Priority cannot exceed 5"],
-      default: 3,
+      type: String,
+      enum: ["low", "medium", "high"],
+      lowercase: true,
+      trim: true,
+      default: "medium",
     },
+    tags: {
+      type: [String],
+      default: [],
+      lowercase: true,
+      trim: true,
+    },
+    subtasks: [
+      {
+        title: {
+          type: String,
+          required: true,
+        },
+        isCompleted: {
+          type: Boolean,
+          default: false,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     dueDate: {
       type: Date,
-      required: true,
+      required: [true, 'Due date is required'],
       validate: {
         validator: function (v) {
-          return v > Date.now();
+          if (this.isNew) {
+            return v > Date.now();
+          }
+          return true;
         },
-        message: (props) => `Due date must be in the future!`,
+        message: (props) => `Due date for new tasks must be in the future!`,
       },
     },
     assignedTo: {
@@ -41,7 +66,7 @@ const taskSchema = new Schema(
     status: {
       type: String,
       enum: {
-        values: ["pending", "in progress", "completed"],
+        values: ["pending", "in-progress", "completed"],
         message: "{VALUE} is not supported",
       },
       default: "pending",
@@ -49,8 +74,22 @@ const taskSchema = new Schema(
       trim: true,
       required: true,
     },
+    isCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "User ID is required"],
+    },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
+
+// A Virtual field to indicate if a task is overdue
+taskSchema.virtual("isOverdue").get(function () {
+  return !this.isCompleted && this.deuDate && this.dueDate < Date.now();
+});
 
 export default mongoose.model("Task", taskSchema);
