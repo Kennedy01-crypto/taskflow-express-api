@@ -1,5 +1,5 @@
 import express from "express";
-import tasksRouter from "./routes/tasks.js";
+import tasksRouter from "./routes/tasksRoutes.js";
 import mongoose from "mongoose";
 import categoryModel from "./models/category.model.js";
 import taskModel from "./models/task.model.js";
@@ -11,14 +11,13 @@ dotenv.config();
 
 const app = express();
 const PORT = 3000;
+app.use(express.json());
 
 //Connect to database
 connectionToDatabase();
 
-app.use(express.json());
-
 // import your routes here and use them
-// app.use("/api/tasks", tasksRouter);
+app.use("/api/tasks", tasksRouter);
 
 app.post("/api/tasks", async (req, res) => {
   try {
