@@ -72,7 +72,6 @@ const taskSchema = new Schema(
       default: "pending",
       lowercase: true,
       trim: true,
-      required: true,
     },
     isCompleted: {
       type: Boolean,
@@ -81,7 +80,7 @@ const taskSchema = new Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "User ID is required"],
+      // required: [true, "User ID is required"],
     },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
@@ -89,7 +88,7 @@ const taskSchema = new Schema(
 
 // A Virtual field to indicate if a task is overdue
 taskSchema.virtual("isOverdue").get(function () {
-  return !this.isCompleted && this.deuDate && this.dueDate < Date.now();
+  return !this.isCompleted && this.dueDate && this.dueDate < Date.now();
 });
 
 export default mongoose.model("Task", taskSchema);
