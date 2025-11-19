@@ -7,7 +7,7 @@ router.get("/", taskController.getAllTasks);
 router.get("/:id", taskController.getTaskById);
 router.put("/:id", taskController.updateTask);
 router.delete("/:id", taskController.deleteTask);
+router.patch("/:id/complete", taskController.markTaskComplete);
 router.patch("/:id", taskController.updateTask);
-
 
 export default router;

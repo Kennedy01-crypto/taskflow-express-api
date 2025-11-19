@@ -7,11 +7,12 @@ import taskModel from "../models/task.model.js";
  */
 export const createTask = async (req, res, next) => {
   try {
-    const { title, description, completed, dueDate, priority, tags } = req.body;
+    const { title, description, isCompleted, dueDate, priority, tags } =
+      req.body;
     const newTask = await taskModel.create({
       title,
       description,
-      completed: completed || false,
+      isCompleted: isCompleted || false,
       dueDate,
       priority,
       tags,
@@ -135,6 +136,46 @@ export const updateTask = async (req, res, next) => {
       success: false,
       message: `Error occured ${err.message}`,
     });
+  }
+};
+
+/**
+ * @desc mark task as complete/incomplete
+ * @route PATCH /api/tasks/:id/complete
+ * @access public
+ */
+export const markTaskComplete = async (req, res, next) => {
+  try {
+    const taskId = req.params.id;
+    //check if the task exists
+    const task = await taskModel.findById(taskId);
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: `Task not found`,
+      });
+    }
+    console.log(`Completed: ${task.isCompleted}`);
+    //update only the isCompleted: set it to tue if false, set it to false if true
+    const updatedTask = await taskModel.findByIdAndUpdate(
+      taskId,
+      { isCompleted: !task.isCompleted },
+      { new: true, runValidators: true }
+    );
+    res.status(200).json({
+      success: true,
+      message: `Updated complete status to ${updatedTask.isCompleted}`,
+    });
+    console.log(`Updated Task: ${updatedTask.isCompleted}`);
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ message: `Invalid task ID format` });
+    }
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ message: `Validation Error` });
+    }
+
+    res.status(500).json({ message: `Error occured ${err.message}` });
   }
 };
 
