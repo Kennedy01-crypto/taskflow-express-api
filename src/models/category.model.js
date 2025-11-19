@@ -22,7 +22,8 @@ const categorySchema = new Schema({
             return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(v);
         },
         message: (props) => `${props.value} is not a valid color code!`,
-    }
+    }, 
+    default: "#FFFFFF",
   }
 }, {timestamps: true});
 
