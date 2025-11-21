@@ -1,4 +1,5 @@
 import taskModel from "../models/task.model.js";
+import AppError from "../utils/appError.js";
 
 /**
  * @desc Create a new task
@@ -7,34 +8,16 @@ import taskModel from "../models/task.model.js";
  */
 export const createTask = async (req, res, next) => {
   try {
-    const { title, description, isCompleted, dueDate, priority, tags } =
-      req.body;
-    const newTask = await taskModel.create({
-      title,
-      description,
-      isCompleted: isCompleted || false,
-      dueDate,
-      priority,
-      tags,
-    });
+    const newTask = await taskModel.create(req.body);
     res.status(201).json({
       success: true,
-      data: newTask,
+      message: "Task Created Successfully",
+      data: { task: newTask },
     });
   } catch (err) {
-    if (err.name === "ValidationError") {
-      console.log(err.message);
-      return res
-        .status(400)
-        .json({ message: `Validation Error ${err.message}` });
-    }
-
-    console.error(`Error occured ${err.message}`);
-    res.status(500).json({
-      success: false,
-      message: `Error occured ${err.message}`,
-      error: err.message,
-    });
+    // Mongoose ValidationErrors or Duplicate Key Errors will ne caught here
+    // Our global error handler will transform these into appropriate 400 Bad Request errors
+    next(err);
   }
 };
 
@@ -45,12 +28,12 @@ export const createTask = async (req, res, next) => {
 export const getAllTasks = async (req, res, next) => {
   try {
     const tasks = await taskModel.find();
-    res.status(200).json({ success: true, count: tasks.length, data: tasks });
-  } catch (err) {
-    console.error(`Error occured ${err.message}`);
     res
-      .status(500)
-      .json({ success: false, message: `Failed to retrive Tasks` });
+      .status(200)
+      .json({ success: true, count: tasks.length, data: { tasks } });
+  } catch (err) {
+    //if any error ocurs during find(), its likely a programming error
+    next(err);
   }
 };
 
@@ -63,10 +46,9 @@ export const getTaskById = async (req, res, next) => {
   try {
     const task = await taskModel.findById(req.params.id);
     if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: `Task Not Found`,
-      });
+      // if a task is null, means no document wads found with that ID
+      // This is an operational error (404 Not Found)
+      return next(new AppError(`No Task Found! with ID ${req.params.id}`, 404));
     }
 
     res.status(200).json({
@@ -74,18 +56,9 @@ export const getTaskById = async (req, res, next) => {
       data: task,
     });
   } catch (err) {
-    if (err.name == "CastError") {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid task ID format",
-        error: err.message,
-      });
-    }
-    console.error(`Error Fetching task by ID`);
-    res.status(500).json({
-      success: false,
-      message: `Error: ${err.message}`,
-    });
+    // If req.params.id is not a valid MongoDB _id format, Mongoose throws a CastError
+    // Our global error handler will transform this into a 400 Bad Request
+    next(err);
   }
 };
 
@@ -101,15 +74,13 @@ export const updateTask = async (req, res, next) => {
     const updateData = req.body;
 
     const updatedTask = await taskModel.findByIdAndUpdate(taskId, updateData, {
-      new: true,
-      runValidators: true,
+      new: true, //Return the modified document rather than the original
+      runValidators: true, //Run Mongoose validators on update
+      rawResult: true
     });
 
     if (!updatedTask) {
-      return res.status(404).json({
-        success: false,
-        message: `Task Not Found`,
-      });
+      return next(new AppError(`No task found with Id ${taskId}`, 404));
     }
 
     res.status(200).json({
@@ -117,25 +88,8 @@ export const updateTask = async (req, res, next) => {
       data: updatedTask,
     });
   } catch (err) {
-    if (err.name === "CastError") {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid task ID format",
-        error: err.message,
-      });
-    }
-    if (err.name === "ValidationError") {
-      return res.status(400).json({
-        success: false,
-        message: "Validation Error",
-        error: err.message,
-      });
-    }
-    console.error(`Error occured ${err.message}`);
-    res.status(500).json({
-      success: false,
-      message: `Error occured ${err.message}`,
-    });
+    // Handle CastErrors, ValidationErrors here
+    next(err);
   }
 };
 
@@ -190,10 +144,7 @@ export const deleteTask = async (req, res, next) => {
     const deletedTask = await taskModel.findByIdAndDelete(taskId);
 
     if (!deletedTask) {
-      return res.status(404).json({
-        sucess: false,
-        message: `Task not Found`,
-      });
+      return next(new AppError(`No task found with that Id ${taskId}`, 404));
     }
 
     res.status(204).json({
@@ -201,17 +152,6 @@ export const deleteTask = async (req, res, next) => {
       data: null,
     });
   } catch (err) {
-    if (err.name === "CastError") {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid task ID format",
-        error: err.message,
-      });
-    }
-    console.error(`Error occured ${err.message}`);
-    res.status(500).json({
-      success: false,
-      message: `Error occured ${err.message}`,
-    });
+    next(err);
   }
 };
