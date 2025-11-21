@@ -10,7 +10,7 @@ async function connectionToDatabase() {
     await mongoose.connect(uri); // Connect to the MongoDB via mongoose
     console.log(`MongoDB connected`);
   } catch (error) {
-    console.error("Failed to connect to MongoDB", error);
+    console.error("Failed to connect to MongoDB", error.message);
     throw error;
     process.exit(1);
   }
