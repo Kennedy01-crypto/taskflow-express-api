@@ -8,6 +8,13 @@ import AppError from "../utils/appError.js";
  */
 export const createTask = async (req, res, next) => {
   try {
+    // Check if a task with the same title already exists
+    const existingTask = await taskModel.findOne({ title: req.body.title });
+    if (existingTask) {
+      return next(
+        new AppError("A task with this title already exists.", 400)
+      );
+    }
     const newTask = await taskModel.create(req.body);
     res.status(201).json({
       success: true,
