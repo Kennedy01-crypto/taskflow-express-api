@@ -2,7 +2,7 @@ import AppError from "../utils/appError.js";
 
 //gloabl error handling
 const handleCastErrorDB = (err) => {
-  const message = `Invalid ${err.path}: ${err.value}.`;
+  const message = `CastError: Invalid ${err.path}: ${err.value}.`;
   return new AppError(message, 400);
 };
 
@@ -10,15 +10,14 @@ const handleValidationErrorDB = (err) => {
   //by mapping the err.errors object we can extract all validation messages
   //and present them in a coincise client friendly format
   const errors = Object.values(err.errors).map((el) => el.message);
-  const message = `Invalid input data ${errors.join(". ")}`;
+  const message = `Invalid input data; ${errors.join(". ")}`;
   return new AppError(message, 400);
 };
 
 const handleDuplicateFieldsDB = (err) => {
-  //extract the duplicated value from the error message
-  const match = err.errmsg.match(/(["'])(?:(?=(\\?))\2.)*?\1/); //regex to extract quoted string
-  const value = match ? match[0] : "Unknown";
-  const message = `Duplicate field value: ${value}. Please use another value!`;
+  // Extract value from the error
+  const value = err.keyValue[Object.keys(err.keyValue)[0]];
+  const message = `Duplicate field value: "${value}". Please use another value!`;
   return new AppError(message, 400);
 };
 
@@ -51,8 +50,19 @@ const globalErrorHandler = (err, req, res, next) => {
   err.status = err.status || "error";
 
   if (process.env.NODE_ENV === "development") {
-    sendErrorDev(err, res);
-  } else if (process.envNODE_ENV === "production") {
+    // sendErrorDev(err, res);
+    let error = {
+      ...err,
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+    };
+    if (error.name === "ValidationError")
+      error = handleValidationErrorDB(error);
+    if (error.name === "CastError") error = handleCastErrorDB(error);
+    if (error.code === 11000) error = handleDuplicateFieldsDB(error);
+    sendErrorDev(error, res);
+  } else if (process.env.NODE_ENV === "production") {
     let error = {
       // create a mutable copy and ensure properties
       ...err,
@@ -60,7 +70,7 @@ const globalErrorHandler = (err, req, res, next) => {
       name: err.name,
       code: err.code,
     };
-    if (error.name === "CatError") error = handleCastErrorDB(error);
+    if (error.name === "CastError") error = handleCastErrorDB(error);
     if (error.name === "ValidationError")
       error = handleValidationErrorDB(error);
     //MongoDB duplicate key error has code 11000
