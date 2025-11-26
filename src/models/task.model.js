@@ -9,6 +9,7 @@ const taskSchema = new Schema(
       maxlength: [50, "Title cannot exceed 50 characters"],
       required: [true, "Title is required"],
       trim: true,
+      unique: [true, "Title must be unique"],
     },
     description: {
       type: String,
@@ -67,7 +68,7 @@ const taskSchema = new Schema(
       type: String,
       enum: {
         values: ["pending", "in-progress", "completed"],
-        message: "{VALUE} is not supported",
+        message: "{VALUE} is not a valid status!",
       },
       default: "pending",
       lowercase: true,
