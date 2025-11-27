@@ -235,10 +235,7 @@ export const markTaskComplete = async (req, res, next) => {
     //check if the task exists
     const task = await taskModel.findById(taskId);
     if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: `Task not found`,
-      });
+      return next(new AppError("No task found with that Id", 404));
     }
     console.log(`Completed: ${task.isCompleted}`);
     //update only the isCompleted: set it to tue if false, set it to false if true
@@ -253,14 +250,7 @@ export const markTaskComplete = async (req, res, next) => {
     });
     console.log(`Updated Task: ${updatedTask.isCompleted}`);
   } catch (err) {
-    if (err.name === "CastError") {
-      return res.status(400).json({ message: `Invalid task ID format` });
-    }
-    if (err.name === "ValidationError") {
-      return res.status(400).json({ message: `Validation Error` });
-    }
-
-    res.status(500).json({ message: `Error occured ${err.message}` });
+    next();
   }
 };
 
