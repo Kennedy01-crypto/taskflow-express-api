@@ -63,12 +63,11 @@ export const getAllTasks = async (req, res, next) => {
         };
       } else {
         // Simple direct mach filter.
-        // You could add case-insensitivity here for sorting fields like 'status'
-        // if (key === "status" || key === "priority") {
-        //   filter[key] = new RegExp(`^${value}$`, "i"); // Case-insensitive exact match
-        // } else {
-        filter[key] = value;
-        // }
+        if (key === "status" || key === "priority") {
+          filter[key] = new RegExp(value, "i");
+        } else {
+          filter[key] = value;
+        }
       }
     }
 
@@ -109,7 +108,11 @@ export const getAllTasks = async (req, res, next) => {
      * 4. Pagination
      */
     const page = parseInt(req.query.page, 10) || 1; //deffault page is 1
-    const limit = parseInt(req.query.limit, 10) || 10; //default limit is 10
+    const MAX_TASKS_PER_PAGE = 100;
+    let limit = parseInt(req.query.limit, 10) || 10; //default limit is 10
+    if (limit > MAX_TASKS_PER_PAGE) {
+      limit = MAX_TASKS_PER_PAGE;
+    }
     const skip = (page - 1) * limit; //calculate documents to skip
 
     //apply skip and limit to the query
@@ -139,6 +142,28 @@ export const getAllTasks = async (req, res, next) => {
     });
   } catch (err) {
     //if any error ocurs during find(), its likely a programming error
+    next(err);
+  }
+};
+
+/**
+ * @desc Get Sorted Tasks
+ * @routes GET/api/tasks/sorted-examples
+ * @access public
+ */
+export const getSortedTasks = async (req, res, next) => {
+  try {
+    // Hardcoded sort for demonstration
+    const sortBy = "priority -dueDate";
+    const tasks = await taskModel.find().sort(sortBy);
+
+    res.status(200).json({
+      success: true,
+      count: tasks.length,
+      message: `Tasks sorted by: ${sortBy}`,
+      data: { tasks },
+    });
+  } catch (err) {
     next(err);
   }
 };
