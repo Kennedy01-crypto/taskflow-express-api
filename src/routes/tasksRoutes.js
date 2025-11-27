@@ -4,6 +4,7 @@ import * as taskController from "../controllers/taskController.js";
 
 router.post("/", taskController.createTask);
 router.get("/", taskController.getAllTasks);
+router.get("/sorted-examples", taskController.getSortedTasks);
 router.get("/:id", taskController.getTaskById);
 router.put("/:id", taskController.updateTask);
 router.delete("/:id", taskController.deleteTask);
