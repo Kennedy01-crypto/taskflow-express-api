@@ -9,6 +9,8 @@ import categoryRouter from "./routes/categoryRoutes.js";
 import dotenv from "dotenv";
 import AppError from "./utils/appError.js";
 import globalErrorHandler from "./controllers/errorController.js";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./swaggerConfig.js";
 
 //1.LOAD ENV VARIABLES
 dotenv.config();
@@ -32,6 +34,13 @@ connectionToDatabase();
  * Error handling
  * Other Application Confogurations
  */
+
+//API ROUTES
+// ---- Swagger Documentation Setup -----
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// This sets up a route /api-docs that will serve the Swagger UI.
+// When you navigate to http://localhost:3000/api-docs, you will see the interactive documentation.
+
 
 //1. Root route
 app.get("/", (req, res) => {
