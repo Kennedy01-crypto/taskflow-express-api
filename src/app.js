@@ -9,6 +9,7 @@ import categoryRouter from "./routes/categoryRoutes.js";
 import dotenv from "dotenv";
 import AppError from "./utils/appError.js";
 import globalErrorHandler from "./controllers/errorController.js";
+import authRoutes from "./routes/authRoutes.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swaggerConfig.js";
 
@@ -37,10 +38,9 @@ connectionToDatabase();
 
 //API ROUTES
 // ---- Swagger Documentation Setup -----
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // This sets up a route /api-docs that will serve the Swagger UI.
 // When you navigate to http://localhost:3000/api-docs, you will see the interactive documentation.
-
 
 //1. Root route
 app.get("/", (req, res) => {
@@ -49,12 +49,13 @@ app.get("/", (req, res) => {
 });
 
 //2. import your routes here and use them
+app.use("/api/auth", authRoutes);
 app.use("/api/tasks", tasksRouter);
 app.use("/api/categories", categoryRouter);
 
 //3. Middleware for unhandled route errors
 //this will only be reached if no other route has handled the request
-app.use("/*path", (req, res, next) => {
+app.all("/*path", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
@@ -62,7 +63,7 @@ app.use("/*path", (req, res, next) => {
 app.use(globalErrorHandler);
 
 //5. Start server
-const server =app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Access the TaskFlow API at http://127.0.0.1:${PORT}`);
 });
