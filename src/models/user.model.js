@@ -1,20 +1,25 @@
 import mongoose from "mongoose";
 import { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const userSchema = new Schema(
   {
     email: {
       type: String,
-      required: true,
+      required: [true, "Please provide an email"],
       unique: [true, "User with this username already exists"],
       lowercase: true,
       trim: true,
-      match: [/.+\@.+\..+/, "Please fill a valid email address"],
+      match: [
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+        "Please provide a valid email",
+      ],
     },
     password: {
       type: String,
-      required: true,
+      required: [true, "Password is required"],
+      select: false,
       minlength: [8, "Password must be longer than 8 characters"],
     },
   },
@@ -37,5 +42,23 @@ userSchema.pre("save", async function (next) {
     next(error);
   }
 });
+
+//Method to compare candidate password with hashed password
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  const isMatch = await bcrypt.compare(candidatePassword, this.password);
+  return isMatch;
+};
+
+//Method to generate JWT
+//Will be called on a user instance after successful login
+userSchema.methods.createJWT = function () {
+  return jwt.sign(
+    { userId: this._id, email: this.email }, //Payload: user ID and email
+    process.env.JWT_SECRET, // Secret key from environment variables
+    {
+      expiresIn: process.env.JWT_LIFETIME, //Token expiration time
+    }
+  );
+};
 
 export default mongoose.model("User", userSchema);
