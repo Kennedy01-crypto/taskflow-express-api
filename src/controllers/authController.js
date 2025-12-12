@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 // User Registration Controller
 export const registerUser = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     //Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -15,7 +15,7 @@ export const registerUser = async (req, res, next) => {
     }
 
     //Create new user
-    const newUser = await User.create({ email, password });
+    const newUser = await User.create({ email, password, role });
 
     res.status(201).json({
       status: "success",
@@ -23,6 +23,7 @@ export const registerUser = async (req, res, next) => {
       data: {
         userId: newUser._id,
         email: newUser.email,
+        role: newUser.role,
       },
     });
   } catch (err) {
@@ -65,6 +66,7 @@ export const loginUser = async (req, res, next) => {
         user: {
           userId: user._id,
           email: user.email,
+          role: user.role,
         },
         token,
       },

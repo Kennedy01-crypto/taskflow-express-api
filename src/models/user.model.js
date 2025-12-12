@@ -16,6 +16,11 @@ const userSchema = new Schema(
         "Please provide a valid email",
       ],
     },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -53,7 +58,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 //Will be called on a user instance after successful login
 userSchema.methods.createJWT = function () {
   return jwt.sign(
-    { userId: this._id, email: this.email }, //Payload: user ID and email
+    { userId: this._id, email: this.email, role: this.role }, //Payload: user ID and email
     process.env.JWT_SECRET, // Secret key from environment variables
     {
       expiresIn: process.env.JWT_LIFETIME, //Token expiration time
